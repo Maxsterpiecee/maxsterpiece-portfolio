@@ -8,22 +8,48 @@
   "use strict";
 
   /* ── Tiny helpers ──────────────────────────────────────────── */
-  const el   = (tag, attrs = {}, ...children) => {
+  const el = (tag, attrs = {}, ...children) => {
     const node = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs)) {
-      if (k === "class")       node.className = v;
-      else if (k === "html")   node.innerHTML = v;
-      else                     node.setAttribute(k, v);
+      if (k === "class")     node.className = v;
+      else if (k === "html") node.innerHTML = v;
+      else                   node.setAttribute(k, v);
     }
     children.forEach(c => c && node.append(typeof c === "string" ? document.createTextNode(c) : c));
     return node;
   };
 
-  const frag = (...nodes) => {
-    const f = document.createDocumentFragment();
-    nodes.forEach(n => n && f.append(n));
-    return f;
-  };
+  /* ── 4-pointed star SVG ─────────────────────────────────────
+     Used as a decorative motif throughout the site.
+     The path is a smooth concave 4-pointed star (like the logo).
+  ───────────────────────────────────────────────────────────── */
+  function starSVG(size = 16, extraClass = "") {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "-1.1 -1.1 2.2 2.2");
+    svg.setAttribute("width",  size);
+    svg.setAttribute("height", size);
+    svg.setAttribute("aria-hidden", "true");
+    svg.classList.add("star-icon");
+    if (extraClass) svg.classList.add(extraClass);
+    const path = document.createElementNS(ns, "path");
+    // Smooth 4-pointed star via cubic beziers — control offset 0.22 gives
+    // a sharp concave waist matching the logo silhouette.
+    path.setAttribute("d", "M0,-1 C0,-0.22 -0.22,0 -1,0 C-0.22,0 0,0.22 0,1 C0,0.22 0.22,0 1,0 C0.22,0 0,-0.22 0,-1 Z");
+    path.setAttribute("fill", "currentColor");
+    svg.appendChild(path);
+    return svg;
+  }
+
+  /* ── Section label builder ──────────────────────────────────
+     Renders:  ✦ 01 — Label
+  ───────────────────────────────────────────────────────────── */
+  function sectionLabel(num, text) {
+    const p = el("p", { class: "section-label" });
+    p.appendChild(starSVG(10));
+    p.appendChild(document.createTextNode(" " + num + " — " + text));
+    return p;
+  }
 
   /* ── Meta ──────────────────────────────────────────────────── */
   function buildMeta() {
@@ -33,13 +59,10 @@
 
     if (favicon) {
       const link = document.querySelector("link[rel='icon']") || document.createElement("link");
-      link.rel = "icon";
-      // If it's a single emoji/char, use SVG data URI
-      if (favicon.length <= 2) {
-        link.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${favicon}</text></svg>`;
-      } else {
-        link.href = favicon;
-      }
+      link.rel  = "icon";
+      link.href = favicon.length <= 2
+        ? `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${favicon}</text></svg>`
+        : favicon;
       document.head.appendChild(link);
     }
   }
@@ -50,7 +73,10 @@
     if (!nav) return;
     const { logo, links } = SITE.nav;
 
-    const logoA = el("a", { class: "nav-logo", href: "#" }, logo);
+    // Logo: star + wordmark
+    const logoA = el("a", { class: "nav-logo", href: "#" });
+    logoA.appendChild(starSVG(14));
+    logoA.appendChild(document.createTextNode(" " + logo));
 
     const ul = el("ul", { class: "nav-links" });
     links.forEach(({ label, href }) => {
@@ -71,8 +97,7 @@
       toggle.textContent = open ? "Close" : "Menu";
     });
 
-    // Close nav on link click (mobile)
-    ul.querySelectorAll && ul.addEventListener("click", e => {
+    ul.addEventListener("click", e => {
       if (e.target.tagName === "A") {
         ul.classList.remove("open");
         toggle.setAttribute("aria-expanded", "false");
@@ -91,11 +116,18 @@
     if (!section) return;
     const { headline, subheadline } = SITE.hero;
 
-    const wrap = el("div", { class: "container" });
-    const h1   = el("h1", { class: "hero-headline" }, headline);
-    const sub  = el("p",  { class: "hero-sub" },      subheadline);
-    wrap.append(h1, sub);
-    section.appendChild(wrap);
+    // Headline in its own container
+    const wrapTop = el("div", { class: "container" });
+    wrapTop.appendChild(el("h1", { class: "hero-headline" }, headline));
+
+    // Full-width particle star slot — populated by star.js after load
+    const starSlot = el("div", { id: "hero-star", "aria-hidden": "true" });
+
+    // Subheadline in its own container
+    const wrapBot = el("div", { class: "container" });
+    wrapBot.appendChild(el("p", { class: "hero-sub" }, subheadline));
+
+    section.append(wrapTop, starSlot, wrapBot);
   }
 
   /* ── Bio ───────────────────────────────────────────────────── */
@@ -106,8 +138,8 @@
 
     const wrap = el("div", { class: "container" });
     wrap.append(
-      el("p",  { class: "section-label" }, "01 — About"),
-      el("h2", { class: "section-heading reveal" }, heading)
+      sectionLabel("01", "About"),
+      el("h2", { class: "section-heading reveal", id: "bio-heading" }, heading)
     );
 
     const grid = el("div", { class: "bio-grid reveal" });
@@ -119,9 +151,7 @@
     }
 
     const textDiv = el("div", { class: "bio-text" });
-    text.forEach(para => {
-      textDiv.appendChild(el("p", {}, para));
-    });
+    text.forEach(para => textDiv.appendChild(el("p", {}, para)));
 
     if (resumeHref) {
       textDiv.appendChild(
@@ -142,8 +172,8 @@
 
     const wrap = el("div", { class: "container" });
     wrap.append(
-      el("p",  { class: "section-label" }, "02 — Selected Work"),
-      el("h2", { class: "section-heading reveal" }, heading),
+      sectionLabel("02", "Selected Work"),
+      el("h2", { class: "section-heading reveal", id: "writing-heading" }, heading),
       el("p",  { class: "section-subheading reveal" }, subheading)
     );
 
@@ -153,9 +183,9 @@
 
       const main = el("div", { class: "writing-main" });
       main.append(
-        el("h3", { class: "writing-title" }, title),
-        el("span", { class: "writing-meta" }, `${type} — ${year}`),
-        el("span", { class: "writing-venue" }, venue),
+        el("h3",  { class: "writing-title" }, title),
+        el("span",{ class: "writing-meta" }, `${type} — ${year}`),
+        el("span",{ class: "writing-venue" }, venue),
         el("p",   { class: "writing-excerpt" }, excerpt)
       );
       item.appendChild(main);
@@ -183,8 +213,8 @@
 
     const wrap = el("div", { class: "container" });
     wrap.append(
-      el("p",  { class: "section-label" }, "03 — Games"),
-      el("h2", { class: "section-heading reveal" }, heading),
+      sectionLabel("03", "Games"),
+      el("h2", { class: "section-heading reveal", id: "games-heading" }, heading),
       el("p",  { class: "section-subheading reveal" }, subheading)
     );
 
@@ -199,23 +229,17 @@
       }
 
       const body = el("div", { class: "game-body" });
-
       body.appendChild(el("h3", { class: "game-title" }, title));
 
       const roleRow = el("div", { class: "game-role-row" });
       roleRow.append(
-        el("span", { class: "game-role" }, role),
-        el("span", { class: "game-year" }, year),
+        el("span", { class: "game-role" },     role),
+        el("span", { class: "game-year" },     year),
         el("span", { class: "game-platform" }, platform)
       );
       body.appendChild(roleRow);
 
-      if (studio) {
-        body.appendChild(
-          el("p", { class: "game-studio" }, studio)
-        );
-      }
-
+      if (studio) body.appendChild(el("p", { class: "game-studio" }, studio));
       body.appendChild(el("p", { class: "game-desc" }, description));
 
       if (tags && tags.length) {
@@ -238,6 +262,58 @@
     section.appendChild(wrap);
   }
 
+  /* ── Content (YouTube) ─────────────────────────────────────── */
+  function buildContent() {
+    const section = document.getElementById("content");
+    if (!section) return;
+    const { heading, subheading, channelUrl, channelLabel, videos } = SITE.content;
+
+    const wrap = el("div", { class: "container" });
+    wrap.append(
+      sectionLabel("04", "Content"),
+      el("h2", { class: "section-heading reveal", id: "content-heading" }, heading),
+      el("p",  { class: "section-subheading reveal" }, subheading)
+    );
+
+    if (videos && videos.length) {
+      // Video embed grid
+      const grid = el("div", { class: "videos-grid reveal" });
+      videos.forEach(({ id, title }) => {
+        const embedDiv = el("div", { class: "video-embed" });
+        const iframe = el("iframe", {
+          src:            `https://www.youtube.com/embed/${id}`,
+          title:          title || "YouTube video",
+          allow:          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+          allowfullscreen: "",
+          loading:        "lazy",
+        });
+        embedDiv.appendChild(iframe);
+        grid.appendChild(embedDiv);
+      });
+      wrap.appendChild(grid);
+    } else {
+      // Channel CTA (no videos configured yet)
+      const cta = el("div", { class: "content-channel-cta reveal" });
+      if (channelUrl) {
+        const link = el("a", {
+          class:  "content-channel-link",
+          href:   channelUrl,
+          target: "_blank",
+          rel:    "noopener",
+        });
+        link.append(starSVG(22), channelLabel || "Visit Channel →");
+        cta.appendChild(link);
+        cta.appendChild(
+          el("p", { class: "content-note" },
+            "Add video IDs to config.js → content.videos to display embeds here.")
+        );
+      }
+      wrap.appendChild(cta);
+    }
+
+    section.appendChild(wrap);
+  }
+
   /* ── Contact ───────────────────────────────────────────────── */
   function buildContact() {
     const section = document.getElementById("contact");
@@ -246,14 +322,14 @@
 
     const wrap = el("div", { class: "container" });
     wrap.append(
-      el("p",  { class: "section-label" }, "04 — Get In Touch"),
-      el("h2", { class: "section-heading" }, heading),
+      sectionLabel("05", "Get In Touch"),
+      el("h2", { class: "section-heading", id: "contact-heading" }, heading),
       el("p",  { class: "section-subheading" }, intro)
     );
 
     const grid = el("div", { class: "contact-grid" });
 
-    /* Left: email + social links */
+    // Left: email + optional social links
     const info = el("div", { class: "contact-info-block reveal" });
 
     const emailBlock = el("div");
@@ -279,11 +355,10 @@
 
     grid.appendChild(info);
 
-    /* Right: contact form */
+    // Right: contact form
     if (showForm) {
       const formWrap = el("div", { class: "reveal" });
-      const form = buildForm(email, formAction);
-      formWrap.appendChild(form);
+      formWrap.appendChild(buildForm(email, formAction));
       grid.appendChild(formWrap);
     }
 
@@ -297,9 +372,9 @@
     form.setAttribute("method", "POST");
 
     const fields = [
-      { id: "cf-name",    label: "Your Name",    type: "text",  name: "name",    placeholder: "Jane Smith",                required: true  },
-      { id: "cf-email",   label: "Your Email",   type: "email", name: "email",   placeholder: "jane@example.com",          required: true  },
-      { id: "cf-subject", label: "Subject",      type: "text",  name: "subject", placeholder: "Narrative design project",  required: false },
+      { id: "cf-name",    label: "Your Name",  type: "text",  name: "name",    placeholder: "Jane Smith",              required: true  },
+      { id: "cf-email",   label: "Your Email", type: "email", name: "email",   placeholder: "jane@example.com",        required: true  },
+      { id: "cf-subject", label: "Subject",    type: "text",  name: "subject", placeholder: "Narrative design project", required: false },
     ];
 
     fields.forEach(({ id, label, type, name, placeholder, required }) => {
@@ -326,7 +401,7 @@
     form.addEventListener("submit", async e => {
       e.preventDefault();
       status.textContent = "";
-      status.className = "form-status";
+      status.className   = "form-status";
 
       const data = Object.fromEntries(new FormData(form));
       if (!data.name || !data.email || !data.message) {
@@ -336,17 +411,16 @@
       }
 
       if (formAction) {
-        // Real backend (e.g. Formspree)
         try {
-          submit.disabled = true;
+          submit.disabled    = true;
           submit.textContent = "Sending…";
           const res = await fetch(formAction, {
-            method: "POST",
+            method:  "POST",
             headers: { "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify(data),
+            body:    JSON.stringify(data),
           });
           if (res.ok) {
-            status.textContent = "Message sent. I'll be in touch soon.";
+            status.textContent = "Message sent. I’ll be in touch soon.";
             status.classList.add("success");
             form.reset();
           } else {
@@ -356,12 +430,12 @@
           status.textContent = "Something went wrong. Try emailing directly.";
           status.classList.add("error");
         } finally {
-          submit.disabled = false;
+          submit.disabled    = false;
           submit.textContent = "Send Message";
         }
       } else {
         // Mailto fallback
-        const body = encodeURIComponent(`Name: ${data.name}\nEmail: ${data.email}\n\n${data.message}`);
+        const body    = encodeURIComponent(`Name: ${data.name}\nEmail: ${data.email}\n\n${data.message}`);
         const subject = encodeURIComponent(data.subject || "Portfolio Enquiry");
         window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
       }
@@ -376,8 +450,13 @@
     if (!footer) return;
 
     const inner = el("div", { class: "footer-inner container" });
+
+    const copy = el("p", { class: "footer-copy" });
+    copy.appendChild(starSVG(10));
+    copy.appendChild(document.createTextNode(" " + SITE.footer.line));
+
     inner.append(
-      el("p", { class: "footer-copy" }, SITE.footer.line),
+      copy,
       el("a", { class: "footer-back-top", href: "#" }, "↑ Back to top")
     );
     footer.appendChild(inner);
@@ -426,6 +505,7 @@
     buildBio();
     buildWriting();
     buildGames();
+    buildContent();
     buildContact();
     buildFooter();
     initReveal();
