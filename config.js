@@ -30,8 +30,8 @@ const SITE = {
 
   /* ── Hero ─────────────────────────────────────────────────── */
   hero: {
-    headline:    "WRITER.\nGAME\nDEVELOPER.",
-    subheadline: "I build worlds — on the page and in the game.",
+    headline:    "WRITER.\nGAME DEVELOPER.\nCONTENT CREATOR.",
+    subheadline: "I build worlds — on pages and in games.",
   },
 
   /* ── Bio ──────────────────────────────────────────────────── */
