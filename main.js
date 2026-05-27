@@ -41,6 +41,26 @@
     return svg;
   }
 
+  /* ── Elongated 4-pointed star SVG ─────────────────────────────
+     Tall 1:2 star (like the logo) used for the hero bg and as
+     decorative elements throughout sections.  Color: #ff0060.
+  ───────────────────────────────────────────────────────────── */
+  function makeElongatedStar(classes = "") {
+    const ns  = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    // viewBox: width=2.2, height=4.2  → ~1:1.9 aspect ratio
+    svg.setAttribute("viewBox", "-1.1 -2.1 2.2 4.2");
+    svg.setAttribute("aria-hidden", "true");
+    if (classes) svg.className.baseVal = classes;
+    const path = document.createElementNS(ns, "path");
+    // Tall star: top/bottom tips at ±1.9, side tips at ±0.88.
+    // Cubic control offset 0.28 gives smooth concave waist.
+    path.setAttribute("d", "M0,-1.9 C0,-0.28 -0.28,0 -0.88,0 C-0.28,0 0,0.28 0,1.9 C0,0.28 0.28,0 0.88,0 C0.28,0 0,-0.28 0,-1.9 Z");
+    path.setAttribute("fill", "#ff0060");
+    svg.appendChild(path);
+    return svg;
+  }
+
   /* ── Section label builder ──────────────────────────────────
      Renders:  ✦ 01 — Label
   ───────────────────────────────────────────────────────────── */
@@ -120,8 +140,9 @@
     const wrapTop = el("div", { class: "container" });
     wrapTop.appendChild(el("h1", { class: "hero-headline" }, headline));
 
-    // Full-width particle star slot — populated by star.js after load
+    // Hero star — large blurred #ff0060 SVG; cursor-tracked by star.js
     const starSlot = el("div", { id: "hero-star", "aria-hidden": "true" });
+    starSlot.appendChild(makeElongatedStar("hero-star-svg"));
 
     // Subheadline in its own container
     const wrapBot = el("div", { class: "container" });
@@ -162,6 +183,8 @@
     grid.appendChild(textDiv);
     wrap.appendChild(grid);
     section.appendChild(wrap);
+    // Decorative pink star — faint, top-right, clipped by overflow:hidden
+    section.appendChild(makeElongatedStar("deco-star deco-star--bio"));
   }
 
   /* ── Writing ───────────────────────────────────────────────── */
@@ -364,6 +387,8 @@
 
     wrap.appendChild(grid);
     section.appendChild(wrap);
+    // Decorative pink star — visible on dark bg, bottom-right corner
+    section.appendChild(makeElongatedStar("deco-star deco-star--contact"));
   }
 
   function buildForm(email, formAction) {
