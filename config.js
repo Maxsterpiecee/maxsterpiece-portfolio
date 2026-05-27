@@ -117,9 +117,10 @@ const SITE = {
     subheading:   "Stories in video.",
     channelUrl:   "https://www.youtube.com/@Maxsterpiece",
     channelLabel: "@Maxsterpiece on YouTube",
-    // Add video IDs here to display embeds:
-    // { id: "VIDEO_ID", title: "Video title" }
-    videos: [],
+    videos: [
+      { id: "R3opjJxn-yQ", title: "Video 1" },
+      { id: "9rr6Vasst3k", title: "Video 2" },
+    ],
   },
 
   /* ── Contact ──────────────────────────────────────────────── */

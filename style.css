@@ -74,10 +74,6 @@ a:hover {
 section {
   padding-block: clamp(4rem, 10vw, 8rem);
   border-top: var(--border-thick);
-  /* Card-stack scroll — each section rises over the previous one */
-  position: sticky;
-  top: 0;
-  min-height: 100vh;
 }
 
 .section-label {
@@ -213,23 +209,23 @@ section {
   padding-bottom: clamp(2.5rem, 6vw, 5rem);
   border-top: none;
   overflow: hidden;
-  position: relative;  /* not sticky — hero is the base layer */
-  min-height: auto;    /* override the 100vh from the section rule */
-  z-index: 1;
+  position: relative;
 }
 
 .hero-headline {
   font-family: var(--font-display);
-  font-size: clamp(2.5rem, 8.5vw, 8.5rem);
+  /* 8vw keeps longest line ("CONTENT CREATOR.") within the container
+     at typical viewport widths; max 6rem at wide screens            */
+  font-size: clamp(2rem, 8vw, 6rem);
   font-weight: 900;
   line-height: 0.88;
   text-transform: uppercase;
   letter-spacing: -0.03em;
   white-space: pre-line;
   color: var(--white);
+  /* Removed: span { display: inline } — that override prevented
+     .spherize-char (inline-block) from receiving CSS transforms     */
 }
-
-.hero-headline span { display: inline; }
 
 /* ── Hero Star ──────────────────────────────────────────────── */
 #hero-star {
@@ -288,7 +284,7 @@ section {
 /* ── Bio ────────────────────────────────────────────────────── */
 #bio {
   background: var(--white);
-  position: sticky;   /* overrides section rule but keeps sticky intact */
+  position: relative;
   overflow: hidden;
 }
 
@@ -580,6 +576,7 @@ section {
   flex-direction: column;
   align-items: flex-start;
   gap: 1.25rem;
+  margin-top: clamp(2rem, 4vw, 3rem);
 }
 
 .content-channel-link {
@@ -617,7 +614,7 @@ section {
 #contact {
   background: var(--black);
   color: var(--white);
-  position: sticky;
+  position: relative;
   overflow: hidden;
 }
 
@@ -766,20 +763,6 @@ section {
 
 .form-status.success { color: #8adba8; }
 .form-status.error   { color: var(--chrome); }
-
-/* ── Section stacking z-index ───────────────────────────────── */
-/* Each section rises above the previous one. Nav stays at 100. */
-#bio     { z-index: 2; }
-#writing { z-index: 3; }
-#games   { z-index: 4; }
-#content { z-index: 5; }
-#contact { z-index: 6; }
-
-#site-footer {
-  position: sticky;
-  top: 0;
-  z-index: 7;
-}
 
 /* ── Custom cursor ──────────────────────────────────────────── */
 #cursor-dot {

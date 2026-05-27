@@ -298,34 +298,37 @@
       el("p",  { class: "section-subheading reveal" }, subheading)
     );
 
+    // Video embeds (only when IDs are configured)
     if (videos && videos.length) {
-      // Video embed grid
       const grid = el("div", { class: "videos-grid reveal" });
       videos.forEach(({ id, title }) => {
         const embedDiv = el("div", { class: "video-embed" });
         const iframe = el("iframe", {
-          src:            `https://www.youtube.com/embed/${id}`,
-          title:          title || "YouTube video",
-          allow:          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+          src:             `https://www.youtube.com/embed/${id}`,
+          title:           title || "YouTube video",
+          allow:           "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+          referrerpolicy:  "strict-origin-when-cross-origin",
           allowfullscreen: "",
-          loading:        "lazy",
+          loading:         "lazy",
         });
         embedDiv.appendChild(iframe);
         grid.appendChild(embedDiv);
       });
       wrap.appendChild(grid);
-    } else {
-      // Channel CTA (no videos configured yet)
+    }
+
+    // Channel CTA — always visible below the videos (or alone if no videos)
+    if (channelUrl) {
       const cta = el("div", { class: "content-channel-cta reveal" });
-      if (channelUrl) {
-        const link = el("a", {
-          class:  "content-channel-link",
-          href:   channelUrl,
-          target: "_blank",
-          rel:    "noopener",
-        });
-        link.append(starSVG(22), channelLabel || "Visit Channel →");
-        cta.appendChild(link);
+      const link = el("a", {
+        class:  "content-channel-link",
+        href:   channelUrl,
+        target: "_blank",
+        rel:    "noopener",
+      });
+      link.append(starSVG(22), channelLabel || "Visit Channel →");
+      cta.appendChild(link);
+      if (!videos || !videos.length) {
         cta.appendChild(
           el("p", { class: "content-note" },
             "Add video IDs to config.js → content.videos to display embeds here.")
@@ -581,10 +584,11 @@
   }
 
   /* ── Spherize heading effect ──────────────────────────────────
-     Each heading character gets an autonomous sinusoidal drift
-     (different phase/speed per char) AND a cursor-proximity scale
-     effect.  The cursor bulge fades smoothly into the drift as the
-     cursor moves away, so both always coexist.
+     Splits .hero-headline and .section-heading into per-character
+     spans.  Characters within RADIUS px of the cursor scale up with
+     a smooth quadratic falloff — creating a lens / sphere-bulge.
+     Updates on both mousemove (cursor moves) and scroll (chars
+     move past a stationary cursor).
   ───────────────────────────────────────────────────────────── */
   function initSpherize() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -592,7 +596,7 @@
     const targets = document.querySelectorAll('.hero-headline, .section-heading');
     if (!targets.length) return;
 
-    // Split each heading into per-character inline-block spans
+    // Split every heading into per-character inline-block spans
     targets.forEach(heading => {
       const text = heading.textContent;
       heading.innerHTML = '';
@@ -614,54 +618,50 @@
       });
     });
 
-    // Cache spans & stamp per-character drift parameters
     const spans = Array.from(document.querySelectorAll('.spherize-char'));
     if (!spans.length) return;
 
-    spans.forEach(s => {
-      s._ph  = Math.random() * Math.PI * 2;          // phase offset
-      s._spd = 0.35 + Math.random() * 0.55;          // drift speed multiplier
-      s._amp = 1.2  + Math.random() * 1.6;           // drift amplitude (px)
-    });
-
-    const RADIUS    = 170;    // cursor influence radius (px)
-    const MAX_SCALE = 0.26;   // maximum scale-up at cursor centre
+    const RADIUS    = 180;   // px — cursor influence radius
+    const MAX_SCALE = 0.28;  // max scale-up at cursor centre (28%)
 
     let mx = -9999, my = -9999;
-    let clock = 0;
+    let pending = false;
 
-    window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-    document.addEventListener('mouseleave', () => { mx = -9999; my = -9999; });
-
-    (function loop() {
-      requestAnimationFrame(loop);
-      clock += 0.007; // ~0.42 rad/s at 60 fps — slow, dreamy
-
+    function update() {
       spans.forEach(s => {
         const r  = s.getBoundingClientRect();
         const cx = r.left + r.width  * 0.5;
         const cy = r.top  + r.height * 0.5;
         const d  = Math.hypot(mx - cx, my - cy);
 
-        // Autonomous drift — always running
-        const driftX = Math.sin(clock * s._spd +        s._ph) * s._amp;
-        const driftY = Math.cos(clock * s._spd * 0.65 + s._ph) * s._amp;
-
         if (d >= RADIUS) {
-          // Far from cursor: pure drift
-          s.style.transform = `translate(${driftX.toFixed(2)}px,${driftY.toFixed(2)}px)`;
+          if (s.style.transform) s.style.transform = '';
           return;
         }
-
-        // Near cursor: blend in scale, fade out drift
-        const t      = 1 - d / RADIUS;           // 1 at cursor, 0 at edge
-        const scale  = 1 + MAX_SCALE * t * t;
-        const dFade  = 1 - t * t;                // drift fades as cursor approaches
-        s.style.transform =
-          `translate(${(driftX * dFade).toFixed(2)}px,${(driftY * dFade).toFixed(2)}px)` +
-          ` scale(${scale.toFixed(4)})`;
+        // Quadratic falloff: full effect at cursor, zero at edge
+        const t     = 1 - d / RADIUS;
+        const scale = 1 + MAX_SCALE * t * t;
+        s.style.transform = `scale(${scale.toFixed(4)})`;
       });
-    })();
+      pending = false;
+    }
+
+    function scheduleUpdate() {
+      if (!pending) { pending = true; requestAnimationFrame(update); }
+    }
+
+    window.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      scheduleUpdate();
+    });
+
+    // Also update on scroll — chars move under a stationary cursor
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+
+    document.addEventListener('mouseleave', () => {
+      mx = -9999; my = -9999;
+      scheduleUpdate();
+    });
   }
 
   /* ── Scroll reveal ─────────────────────────────────────────── */
