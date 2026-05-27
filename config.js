@@ -31,7 +31,7 @@ const SITE = {
   /* ── Hero ─────────────────────────────────────────────────── */
   hero: {
     headline:    "WRITER.\nGAME DEVELOPER.\nCONTENT CREATOR.",
-    subheadline: "I build worlds — on pages and in games.",
+    subheadline: "I build worlds - on pages and in games.",
   },
 
   /* ── Bio ──────────────────────────────────────────────────── */
@@ -63,7 +63,7 @@ const SITE = {
       },
       {
         title:    "UNTITLED — 02",
-        type:     "Essay",
+        type:     "Short Story",
         year:     "TBD",
         venue:    "—",
         excerpt:  "Description coming soon.",
@@ -81,7 +81,7 @@ const SITE = {
       },
       {
         title:    "UNTITLED — 04",
-        type:     "Novella",
+        type:     "Essay",
         year:     "TBD",
         venue:    "—",
         excerpt:  "Description coming soon.",
@@ -94,7 +94,7 @@ const SITE = {
   /* ── Games Portfolio ──────────────────────────────────────── */
   games: {
     heading:    "Games",
-    subheading: "Writing and game development for interactive media.",
+    subheading: "Game development and design.",
     items: [
       {
         title:       "UNTITLED PROJECT",
@@ -114,7 +114,7 @@ const SITE = {
   /* ── Content (YouTube) ────────────────────────────────────── */
   content: {
     heading:      "Content",
-    subheading:   "Essays, ideas, and stories in video.",
+    subheading:   "Stories in video.",
     channelUrl:   "https://www.youtube.com/@Maxsterpiece",
     channelLabel: "@Maxsterpiece on YouTube",
     // Add video IDs here to display embeds:
