@@ -29,7 +29,7 @@ const SITE = {
   /* ── Hero ─────────────────────────────────────────────────── */
   hero: {
     headline:    "WRITER.\nNARRATIVE\nDESIGNER.",
-    subheadline: "I build worlds with words — on the page and in the game.",
+    subheadline: "I build worlds with words: on the page and in the game.",
   },
 
   /* ── Bio ──────────────────────────────────────────────────── */
@@ -136,8 +136,8 @@ const SITE = {
   /* ── Contact ──────────────────────────────────────────────── */
   contact: {
     heading:   "Contact",
-    intro:     "Available for narrative design projects, writing commissions, consulting, and speaking. Response time is usually within 48 hours.",
-    email:     "hello@yourname.com",
+    intro:     "Available for narrative design projects, writing commissions, consulting, and speaking.",
+    email:     "maxsterpiece@gmail.com",
     links: [
       { label: "Twitter / X",   href: "https://twitter.com/yourhandle"  },
       { label: "LinkedIn",      href: "https://linkedin.com/in/yourname" },
