@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="" /><!-- filled by main.js from config -->
+  <title></title><!-- filled by main.js from config -->
+
+  <!-- Open Graph (optional — fill manually or extend config.js) -->
+  <meta property="og:type"  content="website" />
+  <meta property="og:title" content="" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Navigation ──────────────────────────────────────────── -->
+  <nav id="site-nav" role="navigation" aria-label="Main navigation"></nav>
+
+  <!-- ── Hero ────────────────────────────────────────────────── -->
+  <section id="hero" aria-label="Introduction"></section>
+
+  <!-- ── Bio ─────────────────────────────────────────────────── -->
+  <section id="bio" aria-labelledby="bio-heading">
+    <!-- JS injects heading with id="bio-heading" -->
+  </section>
+
+  <!-- ── Writing ─────────────────────────────────────────────── -->
+  <section id="writing" aria-labelledby="writing-heading"></section>
+
+  <!-- ── Games ───────────────────────────────────────────────── -->
+  <section id="games" aria-labelledby="games-heading"></section>
+
+  <!-- ── Contact ─────────────────────────────────────────────── -->
+  <section id="contact" aria-labelledby="contact-heading"></section>
+
+  <!-- ── Footer ──────────────────────────────────────────────── -->
+  <footer id="site-footer" role="contentinfo"></footer>
+
+  <!-- Config first, then renderer -->
+  <script src="config.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
