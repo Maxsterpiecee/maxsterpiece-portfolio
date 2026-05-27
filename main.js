@@ -387,8 +387,6 @@
 
     wrap.appendChild(grid);
     section.appendChild(wrap);
-    // Decorative pink star — visible on dark bg, bottom-right corner
-    section.appendChild(makeElongatedStar("deco-star deco-star--contact"));
   }
 
   function buildForm(email, formAction) {
@@ -495,13 +493,9 @@
     // Targets and their vertical parallax factor.
     // Formula: element moves (viewportCenter - elementCenter) * factor
     // → elements lag slightly behind scroll → depth effect.
+    // Sections now stack via CSS sticky — only the hero star gets parallax
     const CONFIG = [
-      { sel: '#hero-star',          fy: 0.28 }, // star floats slowest
-      { sel: '#bio .container',     fy: 0.055 },
-      { sel: '#writing .container', fy: 0.045 },
-      { sel: '#games .container',   fy: 0.045 },
-      { sel: '#content .container', fy: 0.045 },
-      { sel: '#contact .container', fy: 0.035 },
+      { sel: '#hero-star', fy: 0.28 },
     ];
 
     const items = [];
@@ -543,11 +537,54 @@
     update(); // initial position
   }
 
+  /* ── Custom cursor ────────────────────────────────────────────
+     Hides the OS cursor (via cursor:none in CSS) and replaces it
+     with a #ff0060 dot + lagging ring.  Skip on touch devices.
+  ───────────────────────────────────────────────────────────── */
+  function initCursor() {
+    if (window.matchMedia('(pointer: coarse)').matches) return; // touch — skip
+
+    const dot  = el("div", { id: "cursor-dot"  });
+    const ring = el("div", { id: "cursor-ring" });
+    document.body.append(dot, ring);
+
+    let dx = window.innerWidth  / 2;
+    let dy = window.innerHeight / 2;
+    let rx = dx, ry = dy;
+
+    // Dot follows exactly; ring lerps behind
+    document.addEventListener('mousemove', e => {
+      dx = e.clientX;
+      dy = e.clientY;
+      dot.style.left = dx + 'px';
+      dot.style.top  = dy + 'px';
+    });
+
+    // Fade both out when cursor leaves the window
+    document.documentElement.addEventListener('mouseleave', () => {
+      dot.style.opacity  = '0';
+      ring.style.opacity = '0';
+    });
+    document.documentElement.addEventListener('mouseenter', () => {
+      dot.style.opacity  = '1';
+      ring.style.opacity = '1';
+    });
+
+    // Ring lags with smooth lerp
+    (function loop() {
+      requestAnimationFrame(loop);
+      rx += (dx - rx) * 0.10;
+      ry += (dy - ry) * 0.10;
+      ring.style.left = rx.toFixed(1) + 'px';
+      ring.style.top  = ry.toFixed(1) + 'px';
+    })();
+  }
+
   /* ── Spherize heading effect ──────────────────────────────────
-     Splits .hero-headline and .section-heading text into per-character
-     <span class="spherize-char"> elements, then on mousemove scales each
-     character based on its distance from the cursor — closest chars
-     enlarge most, creating a subtle lens/sphere bulge.
+     Each heading character gets an autonomous sinusoidal drift
+     (different phase/speed per char) AND a cursor-proximity scale
+     effect.  The cursor bulge fades smoothly into the drift as the
+     cursor moves away, so both always coexist.
   ───────────────────────────────────────────────────────────── */
   function initSpherize() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -555,8 +592,7 @@
     const targets = document.querySelectorAll('.hero-headline, .section-heading');
     if (!targets.length) return;
 
-    // Split each heading into per-character inline-block spans.
-    // Newlines and spaces are kept as text nodes so existing layout is preserved.
+    // Split each heading into per-character inline-block spans
     targets.forEach(heading => {
       const text = heading.textContent;
       heading.innerHTML = '';
@@ -564,11 +600,9 @@
         if (c === '\n') {
           heading.appendChild(document.createTextNode('\n'));
         } else if (c === ' ') {
-          // Space as a span so it participates in character layout
           const s = document.createElement('span');
           s.className = 'spherize-char';
-          s.setAttribute('aria-hidden', 'true');
-          s.style.whiteSpace = 'pre'; // preserve the space width
+          s.style.whiteSpace = 'pre';
           s.textContent = ' ';
           heading.appendChild(s);
         } else {
@@ -580,46 +614,54 @@
       });
     });
 
-    // Cache all spans once — DOM queries inside RAF are expensive
+    // Cache spans & stamp per-character drift parameters
     const spans = Array.from(document.querySelectorAll('.spherize-char'));
     if (!spans.length) return;
 
-    const RADIUS    = 170;   // px — falloff radius around cursor
-    const MAX_SCALE = 0.26;  // max size increase at cursor centre (26%)
+    spans.forEach(s => {
+      s._ph  = Math.random() * Math.PI * 2;          // phase offset
+      s._spd = 0.35 + Math.random() * 0.55;          // drift speed multiplier
+      s._amp = 1.2  + Math.random() * 1.6;           // drift amplitude (px)
+    });
 
-    let mx = -9999, my = -9999; // off-screen default → no effect
-    let pending = false;
+    const RADIUS    = 170;    // cursor influence radius (px)
+    const MAX_SCALE = 0.26;   // maximum scale-up at cursor centre
 
-    function update() {
+    let mx = -9999, my = -9999;
+    let clock = 0;
+
+    window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    document.addEventListener('mouseleave', () => { mx = -9999; my = -9999; });
+
+    (function loop() {
+      requestAnimationFrame(loop);
+      clock += 0.007; // ~0.42 rad/s at 60 fps — slow, dreamy
+
       spans.forEach(s => {
         const r  = s.getBoundingClientRect();
         const cx = r.left + r.width  * 0.5;
         const cy = r.top  + r.height * 0.5;
         const d  = Math.hypot(mx - cx, my - cy);
 
+        // Autonomous drift — always running
+        const driftX = Math.sin(clock * s._spd +        s._ph) * s._amp;
+        const driftY = Math.cos(clock * s._spd * 0.65 + s._ph) * s._amp;
+
         if (d >= RADIUS) {
-          s.style.transform = '';
+          // Far from cursor: pure drift
+          s.style.transform = `translate(${driftX.toFixed(2)}px,${driftY.toFixed(2)}px)`;
           return;
         }
-        // Smooth quadratic falloff: t=1 at cursor, t=0 at edge
-        const t     = 1 - d / RADIUS;
-        const scale = 1 + MAX_SCALE * t * t;
-        s.style.transform = `scale(${scale.toFixed(4)})`;
+
+        // Near cursor: blend in scale, fade out drift
+        const t      = 1 - d / RADIUS;           // 1 at cursor, 0 at edge
+        const scale  = 1 + MAX_SCALE * t * t;
+        const dFade  = 1 - t * t;                // drift fades as cursor approaches
+        s.style.transform =
+          `translate(${(driftX * dFade).toFixed(2)}px,${(driftY * dFade).toFixed(2)}px)` +
+          ` scale(${scale.toFixed(4)})`;
       });
-      pending = false;
-    }
-
-    window.addEventListener('mousemove', e => {
-      mx = e.clientX;
-      my = e.clientY;
-      if (!pending) { pending = true; requestAnimationFrame(update); }
-    });
-
-    // Reset all chars when cursor leaves the window
-    document.addEventListener('mouseleave', () => {
-      mx = -9999; my = -9999;
-      if (!pending) { pending = true; requestAnimationFrame(update); }
-    });
+    })();
   }
 
   /* ── Scroll reveal ─────────────────────────────────────────── */
@@ -671,6 +713,7 @@
     initReveal();
     initActiveNav();
     initParallax();
+    initCursor();
     initSpherize();
   }
 

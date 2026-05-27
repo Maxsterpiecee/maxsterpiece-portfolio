@@ -27,6 +27,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  cursor: none !important;
 }
 
 html {
@@ -73,6 +74,10 @@ a:hover {
 section {
   padding-block: clamp(4rem, 10vw, 8rem);
   border-top: var(--border-thick);
+  /* Card-stack scroll — each section rises over the previous one */
+  position: sticky;
+  top: 0;
+  min-height: 100vh;
 }
 
 .section-label {
@@ -208,7 +213,9 @@ section {
   padding-bottom: clamp(2.5rem, 6vw, 5rem);
   border-top: none;
   overflow: hidden;
-  position: relative;
+  position: relative;  /* not sticky — hero is the base layer */
+  min-height: auto;    /* override the 100vh from the section rule */
+  z-index: 1;
 }
 
 .hero-headline {
@@ -273,14 +280,15 @@ section {
   color: var(--chrome);
   border-left: 4px solid var(--accent);
   padding-left: 1rem;
-  max-width: 640px;
+  max-width: none;
+  white-space: nowrap;
   margin-top: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 /* ── Bio ────────────────────────────────────────────────────── */
 #bio {
   background: var(--white);
-  position: relative;
+  position: sticky;   /* overrides section rule but keeps sticky intact */
   overflow: hidden;
 }
 
@@ -609,7 +617,7 @@ section {
 #contact {
   background: var(--black);
   color: var(--white);
-  position: relative;
+  position: sticky;
   overflow: hidden;
 }
 
@@ -759,6 +767,48 @@ section {
 .form-status.success { color: #8adba8; }
 .form-status.error   { color: var(--chrome); }
 
+/* ── Section stacking z-index ───────────────────────────────── */
+/* Each section rises above the previous one. Nav stays at 100. */
+#bio     { z-index: 2; }
+#writing { z-index: 3; }
+#games   { z-index: 4; }
+#content { z-index: 5; }
+#contact { z-index: 6; }
+
+#site-footer {
+  position: sticky;
+  top: 0;
+  z-index: 7;
+}
+
+/* ── Custom cursor ──────────────────────────────────────────── */
+#cursor-dot {
+  position: fixed;
+  top: 0; left: 0;
+  width: 9px;
+  height: 9px;
+  background: #ff0060;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+#cursor-ring {
+  position: fixed;
+  top: 0; left: 0;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid rgba(255, 0, 96, 0.55);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+  transition: width 0.2s ease, height 0.2s ease, opacity 0.2s;
+}
+
 /* ── Decorative Stars ───────────────────────────────────────── */
 /* Large blurred pink stars used as section bg accents.
    Parent section must have position:relative + overflow:hidden. */
@@ -875,6 +925,7 @@ section {
   .game-card:last-child   { border-bottom: none; }
 
   .hero-star-svg { width: min(360px, 82vw); }
+  .hero-sub { white-space: normal; }
 }
 
 /* ── Spherize text characters ───────────────────────────────── */
