@@ -226,10 +226,23 @@ section {
   width: 100%;
   height: min(480px, 70vw);
   padding-block: clamp(1rem, 2vw, 2rem);
+  will-change: transform;
 }
 
 #hero-star canvas {
   display: block;
+  /* Blur softens the dots into a hazy glow */
+  filter: blur(2.8px);
+  opacity: 0.72;
+  /* Radial fade — star dissolves into the dark hero bg at edges */
+  -webkit-mask-image: radial-gradient(
+    ellipse 68% 68% at 50% 50%,
+    black 18%, rgba(0,0,0,0.6) 48%, transparent 72%
+  );
+  mask-image: radial-gradient(
+    ellipse 68% 68% at 50% 50%,
+    black 18%, rgba(0,0,0,0.6) 48%, transparent 72%
+  );
 }
 
 /* ── Hero subheadline ───────────────────────────────────────── */

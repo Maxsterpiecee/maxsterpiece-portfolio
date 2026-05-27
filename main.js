@@ -462,6 +462,62 @@
     footer.appendChild(inner);
   }
 
+  /* ── Parallax scrolling ───────────────────────────────────── */
+  function initParallax() {
+    // Respect accessibility — no motion effects if user prefers
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // Targets and their vertical parallax factor.
+    // Formula: element moves (viewportCenter - elementCenter) * factor
+    // → elements lag slightly behind scroll → depth effect.
+    const CONFIG = [
+      { sel: '#hero-star',          fy: 0.28 }, // star floats slowest
+      { sel: '#bio .container',     fy: 0.055 },
+      { sel: '#writing .container', fy: 0.045 },
+      { sel: '#games .container',   fy: 0.045 },
+      { sel: '#content .container', fy: 0.045 },
+      { sel: '#contact .container', fy: 0.035 },
+    ];
+
+    const items = [];
+    CONFIG.forEach(({ sel, fy }) => {
+      document.querySelectorAll(sel).forEach(node => {
+        node.style.willChange = 'transform';
+        items.push({ el: node, fy });
+      });
+    });
+
+    if (!items.length) return;
+
+    let pending = false;
+
+    function update() {
+      const vh = window.innerHeight;
+      const vMid = vh * 0.5;
+      items.forEach(({ el, fy }) => {
+        const r      = el.getBoundingClientRect();
+        const elMid  = r.top + r.height * 0.5;
+        // Normalised distance from viewport centre (–0.5 … 0.5 typical range)
+        const norm   = (elMid - vMid) / vh;
+        // Translate: positive norm = element is below centre = push it slightly
+        // down so it "catches up" as it scrolls into view — classic parallax feel
+        const offset = norm * vh * fy;
+        el.style.transform = `translateY(${offset.toFixed(2)}px)`;
+      });
+      pending = false;
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!pending) {
+        pending = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
+
+    window.addEventListener('resize', update);
+    update(); // initial position
+  }
+
   /* ── Scroll reveal ─────────────────────────────────────────── */
   function initReveal() {
     const observer = new IntersectionObserver(
@@ -510,6 +566,7 @@
     buildFooter();
     initReveal();
     initActiveNav();
+    initParallax();
   }
 
   if (document.readyState === "loading") {
