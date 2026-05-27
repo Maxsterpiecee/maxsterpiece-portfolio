@@ -543,6 +543,85 @@
     update(); // initial position
   }
 
+  /* ── Spherize heading effect ──────────────────────────────────
+     Splits .hero-headline and .section-heading text into per-character
+     <span class="spherize-char"> elements, then on mousemove scales each
+     character based on its distance from the cursor — closest chars
+     enlarge most, creating a subtle lens/sphere bulge.
+  ───────────────────────────────────────────────────────────── */
+  function initSpherize() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const targets = document.querySelectorAll('.hero-headline, .section-heading');
+    if (!targets.length) return;
+
+    // Split each heading into per-character inline-block spans.
+    // Newlines and spaces are kept as text nodes so existing layout is preserved.
+    targets.forEach(heading => {
+      const text = heading.textContent;
+      heading.innerHTML = '';
+      [...text].forEach(c => {
+        if (c === '\n') {
+          heading.appendChild(document.createTextNode('\n'));
+        } else if (c === ' ') {
+          // Space as a span so it participates in character layout
+          const s = document.createElement('span');
+          s.className = 'spherize-char';
+          s.setAttribute('aria-hidden', 'true');
+          s.style.whiteSpace = 'pre'; // preserve the space width
+          s.textContent = ' ';
+          heading.appendChild(s);
+        } else {
+          const s = document.createElement('span');
+          s.className = 'spherize-char';
+          s.textContent = c;
+          heading.appendChild(s);
+        }
+      });
+    });
+
+    // Cache all spans once — DOM queries inside RAF are expensive
+    const spans = Array.from(document.querySelectorAll('.spherize-char'));
+    if (!spans.length) return;
+
+    const RADIUS    = 170;   // px — falloff radius around cursor
+    const MAX_SCALE = 0.26;  // max size increase at cursor centre (26%)
+
+    let mx = -9999, my = -9999; // off-screen default → no effect
+    let pending = false;
+
+    function update() {
+      spans.forEach(s => {
+        const r  = s.getBoundingClientRect();
+        const cx = r.left + r.width  * 0.5;
+        const cy = r.top  + r.height * 0.5;
+        const d  = Math.hypot(mx - cx, my - cy);
+
+        if (d >= RADIUS) {
+          s.style.transform = '';
+          return;
+        }
+        // Smooth quadratic falloff: t=1 at cursor, t=0 at edge
+        const t     = 1 - d / RADIUS;
+        const scale = 1 + MAX_SCALE * t * t;
+        s.style.transform = `scale(${scale.toFixed(4)})`;
+      });
+      pending = false;
+    }
+
+    window.addEventListener('mousemove', e => {
+      mx = e.clientX;
+      my = e.clientY;
+      if (!pending) { pending = true; requestAnimationFrame(update); }
+    });
+
+    // Reset all chars when cursor leaves the window
+    document.addEventListener('mouseleave', () => {
+      mx = -9999; my = -9999;
+      if (!pending) { pending = true; requestAnimationFrame(update); }
+    });
+  }
+
   /* ── Scroll reveal ─────────────────────────────────────────── */
   function initReveal() {
     const observer = new IntersectionObserver(
@@ -592,6 +671,7 @@
     initReveal();
     initActiveNav();
     initParallax();
+    initSpherize();
   }
 
   if (document.readyState === "loading") {
