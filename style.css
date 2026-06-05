@@ -428,6 +428,12 @@ section {
 
 .writing-link:hover { color: var(--accent); }
 
+/* When the whole card is an <a>, remove default link decoration */
+a.writing-item {
+  text-decoration: none;
+  color: inherit;
+}
+
 /* ── Games ──────────────────────────────────────────────────── */
 #games {
   background: var(--white);

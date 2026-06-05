@@ -202,7 +202,15 @@
 
     const list = el("div", { class: "writing-list reveal" });
     items.forEach(({ title, type, year, venue, excerpt, href, hrefLabel }) => {
-      const item = el("div", { class: "writing-item" });
+      // When an href is set the whole card becomes a link (<a>).
+      // External URLs open in a new tab; internal paths navigate in-place.
+      const isExternal = href && href.startsWith('http');
+      const itemAttrs = { class: "writing-item" };
+      if (href) {
+        itemAttrs.href = href;
+        if (isExternal) { itemAttrs.target = "_blank"; itemAttrs.rel = "noopener"; }
+      }
+      const item = el(href ? "a" : "div", itemAttrs);
 
       const main = el("div", { class: "writing-main" });
       main.append(
@@ -214,10 +222,9 @@
       item.appendChild(main);
 
       if (href) {
+        // Render the label as a <span> — the parent <a> already owns the click.
         const col = el("div", { class: "writing-link-col" });
-        col.appendChild(
-          el("a", { class: "writing-link", href, target: "_blank", rel: "noopener" }, hrefLabel)
-        );
+        col.appendChild(el("span", { class: "writing-link" }, hrefLabel));
         item.appendChild(col);
       }
 

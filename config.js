@@ -58,7 +58,7 @@ const SITE = {
         year:     "TBD",
         venue:    "—",
         excerpt:  "Description coming soon.",
-        href:     "",
+        href:     "story-01.html",
         hrefLabel: "Read →",
       },
       {
