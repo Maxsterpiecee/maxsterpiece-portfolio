@@ -362,6 +362,40 @@ section {
   align-items: start;
   background: var(--white);
   transition: background 0.1s, color 0.1s;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Gradient shimmer — slides in from right on hover, drifts while hovered */
+.writing-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    transparent 30%,
+    rgba(255, 0, 96, 0.18) 65%,
+    rgba(174, 22, 255, 0.32) 100%
+  );
+  background-size: 200% 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  animation: writing-glow-drift 5s ease-in-out infinite;
+  transition: opacity 0.4s ease, transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.writing-item:hover::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@keyframes writing-glow-drift {
+  0%   { background-position: 80% center; }
+  50%  { background-position: 100% center; }
+  100% { background-position: 80% center; }
 }
 
 .writing-item:last-child { border-bottom: none; }
