@@ -57,7 +57,7 @@ const SITE = {
         type:     "Short Story",
         year:     "03/2023",
         venue:    "—",
-        excerpt:  "In the ruins of the Collapse, a lone courier follows a mysterious hum into the dead heart of the city — and finds more than she bargained for.",
+        excerpt:  "A lone Stray navigates the ruins of a collapsed world, chasing a hum that no one else dares to follow. What she finds in the city’s forbidden heart changes everything.",
         href:     "story-01.html",
         hrefLabel: "Read →",
       },
