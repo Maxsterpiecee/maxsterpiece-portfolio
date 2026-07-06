@@ -53,11 +53,11 @@ const SITE = {
     subheading:  "Fiction, essays, and narrative work.",
     items: [
       {
-        title:    "UNTITLED — 01",
+        title:    "KATZE",
         type:     "Short Story",
-        year:     "TBD",
+        year:     "03/2023",
         venue:    "—",
-        excerpt:  "Description coming soon.",
+        excerpt:  "In the ruins of the Collapse, a lone courier follows a mysterious hum into the dead heart of the city — and finds more than she bargained for.",
         href:     "story-01.html",
         hrefLabel: "Read →",
       },
