@@ -71,12 +71,12 @@ const SITE = {
         hrefLabel: "Read →",
       },
       {
-        title:    "UNTITLED — 03",
-        type:     "Short Story",
-        year:     "TBD",
-        venue:    "—",
-        excerpt:  "Description coming soon.",
-        href:     "",
+        title:    "KNIGHTINGALE",
+        type:     "Novella",
+        year:     "05/2026",
+        venue:    "",
+        excerpt:  "A dying Knight and a nameless Healer travel unmapped, corrupted lands in search of the Chalice — a relic that may not exist. Ongoing work in progress.",
+        href:     "story-knightingale.html",
         hrefLabel: "Read →",
       },
       {

@@ -201,6 +201,21 @@ body {
   color: var(--black);
 }
 
+/* Work-in-progress badge shown in story header */
+.story-wip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #ff0060;
+  margin-top: 1.25rem;
+  padding: 0.35em 0.8em;
+  border: 1px solid rgba(255, 0, 96, 0.4);
+}
+
 /* ── Story Footer ───────────────────────────────────────────── */
 .story-footer {
   background: var(--black);
