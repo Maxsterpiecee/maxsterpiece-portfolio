@@ -616,60 +616,82 @@
       while (pts.length && now - pts[0].t > LIFE) pts.shift();
       if (pts.length < 2) return;
 
-      const tail = pts[0];
-      const tip  = pts[pts.length - 1];
+      const n = pts.length;
+      const t = now * 0.001; // seconds — drives the ripple animation
 
-      // Gradient: orange at tail → purple → pink at tip
-      // Soft edges (not 0) keep the trail wispy rather than hard-edged
+      // Displace each point perpendicularly to the trail direction using
+      // two overlapping sine waves — creates organic smoke-like drift.
+      // Displacement grows toward the tail (oldest) and is zero at the tip.
+      const disp = pts.map((p, i) => {
+        const tailFrac = 1 - i / (n - 1); // 1 at tail, 0 at tip
+        const amp = tailFrac * tailFrac * 4;
+
+        // Local tangent vector from neighbouring points
+        let dx, dy;
+        if      (i === 0)     { dx = pts[1].x - pts[0].x;           dy = pts[1].y - pts[0].y; }
+        else if (i === n - 1) { dx = pts[n-1].x - pts[n-2].x;       dy = pts[n-1].y - pts[n-2].y; }
+        else                  { dx = pts[i+1].x - pts[i-1].x;       dy = pts[i+1].y - pts[i-1].y; }
+        const len = Math.hypot(dx, dy) || 1;
+        const px  = -dy / len; // perpendicular
+        const py  =  dx / len;
+
+        const wave = (Math.sin(t * 2.6 + i * 0.42) * 0.6 +
+                      Math.sin(t * 1.3 + i * 0.87) * 0.4) * amp;
+
+        return { x: p.x + px * wave, y: p.y + py * wave };
+      });
+
+      // Gradient uses original point positions for a stable colour axis
+      const oTail = pts[0], oTip = pts[n - 1];
       let grad;
-      if (Math.abs(tip.x - tail.x) > 0.5 || Math.abs(tip.y - tail.y) > 0.5) {
-        grad = ctx.createLinearGradient(tail.x, tail.y, tip.x, tip.y);
-        grad.addColorStop(0,    'rgba(255,106,0,  0.09)');
-        grad.addColorStop(0.12, 'rgba(255,106,0,  0.62)');
-        grad.addColorStop(0.55, 'rgba(174,22,255, 0.70)');
-        grad.addColorStop(0.88, 'rgba(255,0,96,   0.74)');
-        grad.addColorStop(1,    'rgba(255,0,96,   0.07)');
+      if (Math.abs(oTip.x - oTail.x) > 0.5 || Math.abs(oTip.y - oTail.y) > 0.5) {
+        grad = ctx.createLinearGradient(oTail.x, oTail.y, oTip.x, oTip.y);
+        grad.addColorStop(0,    'rgba(255,106,0,  0.05)');
+        grad.addColorStop(0.12, 'rgba(255,106,0,  0.48)');
+        grad.addColorStop(0.55, 'rgba(174,22,255, 0.55)');
+        grad.addColorStop(0.88, 'rgba(255,0,96,   0.58)');
+        grad.addColorStop(1,    'rgba(255,0,96,   0.04)');
       } else {
-        grad = 'rgba(174,22,255,0.5)';
+        grad = 'rgba(174,22,255,0.35)';
       }
 
-      // Build one smooth bezier path through all points (midpoint method)
+      // Smooth bezier path through the displaced (rippling) points
       ctx.beginPath();
-      ctx.moveTo(tail.x, tail.y);
-      for (let i = 1; i < pts.length - 1; i++) {
-        const mx = (pts[i].x + pts[i + 1].x) * 0.5;
-        const my = (pts[i].y + pts[i + 1].y) * 0.5;
-        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+      ctx.moveTo(disp[0].x, disp[0].y);
+      for (let i = 1; i < n - 1; i++) {
+        const mx = (disp[i].x + disp[i + 1].x) * 0.5;
+        const my = (disp[i].y + disp[i + 1].y) * 0.5;
+        ctx.quadraticCurveTo(disp[i].x, disp[i].y, mx, my);
       }
-      ctx.lineTo(tip.x, tip.y);
+      ctx.lineTo(disp[n - 1].x, disp[n - 1].y);
 
       ctx.lineCap  = 'round';
       ctx.lineJoin = 'round';
 
-      // Outer wisp — very wide and barely there, gives the smoky halo
+      // Outer halo — very wide, barely-there smoky bloom
       ctx.save();
-      ctx.filter      = 'blur(12px)';
+      ctx.filter      = 'blur(16px)';
       ctx.strokeStyle = grad;
-      ctx.lineWidth   = 11;
+      ctx.lineWidth   = 13;
+      ctx.globalAlpha = 0.10;
+      ctx.stroke();
+      ctx.restore();
+
+      // Mid glow — carries the colour
+      ctx.save();
+      ctx.filter      = 'blur(7px)';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth   = 5;
       ctx.globalAlpha = 0.18;
       ctx.stroke();
       ctx.restore();
 
-      // Mid glow — medium spread, most of the visible colour
+      // Core — soft, not rigid
       ctx.save();
-      ctx.filter      = 'blur(5px)';
-      ctx.strokeStyle = grad;
-      ctx.lineWidth   = 5;
-      ctx.globalAlpha = 0.30;
-      ctx.stroke();
-      ctx.restore();
-
-      // Core — soft, not razor-sharp
-      ctx.save();
-      ctx.filter      = 'blur(2px)';
+      ctx.filter      = 'blur(3px)';
       ctx.strokeStyle = grad;
       ctx.lineWidth   = 2.5;
-      ctx.globalAlpha = 0.52;
+      ctx.globalAlpha = 0.34;
       ctx.stroke();
       ctx.restore();
     })();
