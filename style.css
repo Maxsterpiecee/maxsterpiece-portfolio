@@ -952,10 +952,10 @@ a.writing-item {
 /* Hero (white text on dark bg): gradient visible only through letter shapes */
 .hero-headline {
   background-image: radial-gradient(
-    ellipse 280px 170px at var(--glow-x, -600px) var(--glow-y, -600px),
-    #ff0060,
-    rgba(174, 22, 255, 0.90) 42%,
-    transparent 68%
+    ellipse 400px 240px at var(--glow-x, -600px) var(--glow-y, -600px),
+    rgba(255, 0, 96, 0.50),
+    rgba(174, 22, 255, 0.22) 50%,
+    transparent 82%
   );
   background-color: var(--white);
   -webkit-background-clip: text;
@@ -966,10 +966,10 @@ a.writing-item {
 /* Section headings (dark text on light bg): white gradient whitens letters near cursor */
 .section-heading {
   background-image: radial-gradient(
-    ellipse 280px 170px at var(--glow-x, -600px) var(--glow-y, -600px),
-    rgba(255, 255, 255, 1.0),
-    rgba(235, 210, 255, 0.75) 42%,
-    transparent 68%
+    ellipse 400px 240px at var(--glow-x, -600px) var(--glow-y, -600px),
+    rgba(255, 255, 255, 0.60),
+    rgba(235, 210, 255, 0.22) 50%,
+    transparent 82%
   );
   background-color: var(--black);
   -webkit-background-clip: text;
@@ -980,10 +980,10 @@ a.writing-item {
 /* Contact section heading is white text on dark bg — same treatment as hero */
 #contact .section-heading {
   background-image: radial-gradient(
-    ellipse 280px 170px at var(--glow-x, -600px) var(--glow-y, -600px),
-    #ff0060,
-    rgba(174, 22, 255, 0.90) 42%,
-    transparent 68%
+    ellipse 400px 240px at var(--glow-x, -600px) var(--glow-y, -600px),
+    rgba(255, 0, 96, 0.50),
+    rgba(174, 22, 255, 0.22) 50%,
+    transparent 82%
   );
   background-color: var(--white);
 }
