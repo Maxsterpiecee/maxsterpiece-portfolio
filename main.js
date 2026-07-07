@@ -554,39 +554,51 @@
   function initCursor() {
     if (window.matchMedia('(pointer: coarse)').matches) return; // touch — skip
 
-    const dot  = el("div", { id: "cursor-dot"  });
-    const ring = el("div", { id: "cursor-ring" });
-    document.body.append(dot, ring);
+    // Star cursor — SVG matching the site's 4-pointed star motif
+    const ns  = "http://www.w3.org/2000/svg";
+    const star = document.createElementNS(ns, "svg");
+    star.id = "cursor-star";
+    star.setAttribute("viewBox", "-1.1 -1.1 2.2 2.2");
+    star.setAttribute("width",  "18");
+    star.setAttribute("height", "18");
+    star.setAttribute("aria-hidden", "true");
+    const starPath = document.createElementNS(ns, "path");
+    starPath.setAttribute("d", "M0,-1 C0,-0.22 -0.22,0 -1,0 C-0.22,0 0,0.22 0,1 C0,0.22 0.22,0 1,0 C0.22,0 0,-0.22 0,-1 Z");
+    starPath.setAttribute("fill", "#ff0060");
+    star.appendChild(starPath);
+
+    const trail = el("div", { id: "cursor-trail" });
+    document.body.append(star, trail);
 
     let dx = window.innerWidth  / 2;
     let dy = window.innerHeight / 2;
     let rx = dx, ry = dy;
 
-    // Dot follows exactly; ring lerps behind
+    // Star follows exactly; trail lerps behind
     document.addEventListener('mousemove', e => {
       dx = e.clientX;
       dy = e.clientY;
-      dot.style.left = dx + 'px';
-      dot.style.top  = dy + 'px';
+      star.style.left = dx + 'px';
+      star.style.top  = dy + 'px';
     });
 
     // Fade both out when cursor leaves the window
     document.documentElement.addEventListener('mouseleave', () => {
-      dot.style.opacity  = '0';
-      ring.style.opacity = '0';
+      star.style.opacity  = '0';
+      trail.style.opacity = '0';
     });
     document.documentElement.addEventListener('mouseenter', () => {
-      dot.style.opacity  = '1';
-      ring.style.opacity = '1';
+      star.style.opacity  = '1';
+      trail.style.opacity = '1';
     });
 
-    // Ring lags with smooth lerp
+    // Trail lags with smooth lerp
     (function loop() {
       requestAnimationFrame(loop);
-      rx += (dx - rx) * 0.10;
-      ry += (dy - ry) * 0.10;
-      ring.style.left = rx.toFixed(1) + 'px';
-      ring.style.top  = ry.toFixed(1) + 'px';
+      rx += (dx - rx) * 0.08;
+      ry += (dy - ry) * 0.08;
+      trail.style.left = rx.toFixed(1) + 'px';
+      trail.style.top  = ry.toFixed(1) + 'px';
     })();
   }
 

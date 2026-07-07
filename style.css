@@ -793,31 +793,34 @@ a.writing-item {
 .form-status.error   { color: var(--chrome); }
 
 /* ── Custom cursor ──────────────────────────────────────────── */
-#cursor-dot {
+#cursor-star {
   position: fixed;
   top: 0; left: 0;
-  width: 9px;
-  height: 9px;
-  background: #ff0060;
-  border-radius: 50%;
+  width: 18px;
+  height: 18px;
   pointer-events: none;
   z-index: 9999;
   transform: translate(-50%, -50%);
-  will-change: transform;
+  will-change: left, top;
+  transition: opacity 0.2s;
 }
 
-#cursor-ring {
+#cursor-trail {
   position: fixed;
   top: 0; left: 0;
-  width: 28px;
-  height: 28px;
-  border: 1.5px solid rgba(255, 0, 96, 0.55);
-  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  background: radial-gradient(ellipse at center,
+    rgba(255, 0, 96, 0.55) 0%,
+    rgba(174, 22, 255, 0.28) 45%,
+    transparent 70%
+  );
+  filter: blur(9px);
   pointer-events: none;
   z-index: 9998;
   transform: translate(-50%, -50%);
-  will-change: transform;
-  transition: width 0.2s ease, height 0.2s ease, opacity 0.2s;
+  will-change: left, top;
+  transition: opacity 0.3s;
 }
 
 /* ── Decorative Stars ───────────────────────────────────────── */
