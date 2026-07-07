@@ -223,8 +223,6 @@ section {
   letter-spacing: -0.03em;
   white-space: pre-line;
   color: var(--white);
-  /* Removed: span { display: inline } — that override prevented
-     .spherize-char (inline-block) from receiving CSS transforms     */
 }
 
 /* ── Hero Star ──────────────────────────────────────────────── */
@@ -945,12 +943,34 @@ a.writing-item {
   .hero-sub { white-space: normal; }
 }
 
-/* ── Spherize text characters ───────────────────────────────── */
-/* Individual character spans created by initSpherize() in main.js */
-.spherize-char {
-  display: inline-block;
-  /* No CSS transition — RAF loop provides smooth updates */
-  will-change: transform;
+/* ── Heading cursor glow ────────────────────────────────────── */
+/* Radial gradient that tracks the cursor over large headings.
+   JS (initHeadingGlow) sets --glow-x/y and toggles .heading-glow-active. */
+.hero-headline,
+.section-heading {
+  position: relative;
+}
+
+.hero-headline::before,
+.section-heading::before {
+  content: '';
+  position: absolute;
+  inset: -40px -60px;
+  background: radial-gradient(
+    ellipse 220px 130px at var(--glow-x, -600px) var(--glow-y, -600px),
+    rgba(255, 0, 96, 0.30),
+    rgba(174, 22, 255, 0.16) 48%,
+    transparent 72%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 1;
+}
+
+.hero-headline.heading-glow-active::before,
+.section-heading.heading-glow-active::before {
+  opacity: 1;
 }
 
 /* ── Scroll animation ───────────────────────────────────────── */

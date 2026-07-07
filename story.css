@@ -4,11 +4,7 @@
  * Loaded after style.css; inherits all CSS custom properties.
  */
 
-/* ── Cursor: restore default (style.css sets none globally) ─── */
-*,
-*::before,
-*::after { cursor: auto !important; }
-a, button, [role="button"] { cursor: pointer !important; }
+/* cursor:none from style.css carries through — cursor.js renders the custom star */
 
 /* ── Reading Progress Bar ───────────────────────────────────── */
 #reading-progress {

@@ -547,235 +547,32 @@
     update(); // initial position
   }
 
-  /* ── Custom cursor ────────────────────────────────────────────
-     Hides the OS cursor (via cursor:none in CSS) and replaces it
-     with a #ff0060 dot + lagging ring.  Skip on touch devices.
+  /* ── Heading cursor glow ──────────────────────────────────────
+     Tracks the cursor over .hero-headline and .section-heading,
+     painting a pink-purple radial gradient that follows the mouse —
+     similar to the writing-block hover effect but for large titles.
   ───────────────────────────────────────────────────────────── */
-  function initCursor() {
-    if (window.matchMedia('(pointer: coarse)').matches) return; // touch — skip
-
-    // Star cursor SVG — fill via CSS so transitions work
-    const ns = 'http://www.w3.org/2000/svg';
-    const star = document.createElementNS(ns, 'svg');
-    star.id = 'cursor-star';
-    star.setAttribute('viewBox', '-1.1 -1.1 2.2 2.2');
-    star.setAttribute('width',  '26');
-    star.setAttribute('height', '26');
-    star.setAttribute('aria-hidden', 'true');
-    const starPath = document.createElementNS(ns, 'path');
-    starPath.setAttribute('d', 'M0,-1 C0,-0.22 -0.22,0 -1,0 C-0.22,0 0,0.22 0,1 C0,0.22 0.22,0 1,0 C0.22,0 0,-0.22 0,-1 Z');
-    star.appendChild(starPath);
-
-    // Canvas for smooth directional smoke trail
-    const canvas = document.createElement('canvas');
-    canvas.id = 'cursor-canvas';
-    document.body.append(star, canvas);
-
-    function resize() {
-      canvas.width  = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    const ctx = canvas.getContext('2d');
-    const pts = [];
-    const LIFE = 520; // ms each point lives
-
-    function isClickable(el) {
-      return !!(el && el.closest('a, button, [role="button"]'));
-    }
-
-    document.addEventListener('mousemove', e => {
-      const x = e.clientX, y = e.clientY;
-      star.style.left = x + 'px';
-      star.style.top  = y + 'px';
-
-      // Only push a point if moved at least 3px — keeps path smooth without excess points
-      const last = pts[pts.length - 1];
-      if (!last || Math.hypot(x - last.x, y - last.y) >= 3) {
-        pts.push({ x, y, t: performance.now() });
-      }
-
-      // Hover state — elementFromPoint skips pointer-events:none elements
-      if (isClickable(document.elementFromPoint(x, y))) {
-        star.classList.add('cursor-hover');
-      } else {
-        star.classList.remove('cursor-hover');
-      }
-    });
-
-    document.documentElement.addEventListener('mouseleave', () => { star.style.opacity = '0'; });
-    document.documentElement.addEventListener('mouseenter', () => { star.style.opacity = '1'; });
-
-    (function draw() {
-      requestAnimationFrame(draw);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const now = performance.now();
-      while (pts.length && now - pts[0].t > LIFE) pts.shift();
-      if (pts.length < 2) return;
-
-      const n = pts.length;
-      const t = now * 0.001; // seconds — drives the ripple animation
-
-      // Displace each point perpendicularly to the trail direction using
-      // two overlapping sine waves — creates organic smoke-like drift.
-      // Displacement grows toward the tail (oldest) and is zero at the tip.
-      const disp = pts.map((p, i) => {
-        const tailFrac = 1 - i / (n - 1); // 1 at tail, 0 at tip
-        const amp = tailFrac * tailFrac * 4;
-
-        // Local tangent vector from neighbouring points
-        let dx, dy;
-        if      (i === 0)     { dx = pts[1].x - pts[0].x;           dy = pts[1].y - pts[0].y; }
-        else if (i === n - 1) { dx = pts[n-1].x - pts[n-2].x;       dy = pts[n-1].y - pts[n-2].y; }
-        else                  { dx = pts[i+1].x - pts[i-1].x;       dy = pts[i+1].y - pts[i-1].y; }
-        const len = Math.hypot(dx, dy) || 1;
-        const px  = -dy / len; // perpendicular
-        const py  =  dx / len;
-
-        const wave = (Math.sin(t * 2.6 + i * 0.42) * 0.6 +
-                      Math.sin(t * 1.3 + i * 0.87) * 0.4) * amp;
-
-        return { x: p.x + px * wave, y: p.y + py * wave };
-      });
-
-      // Gradient uses original point positions for a stable colour axis
-      const oTail = pts[0], oTip = pts[n - 1];
-      let grad;
-      if (Math.abs(oTip.x - oTail.x) > 0.5 || Math.abs(oTip.y - oTail.y) > 0.5) {
-        grad = ctx.createLinearGradient(oTail.x, oTail.y, oTip.x, oTip.y);
-        grad.addColorStop(0,    'rgba(255,106,0,  0.05)');
-        grad.addColorStop(0.12, 'rgba(255,106,0,  0.48)');
-        grad.addColorStop(0.55, 'rgba(174,22,255, 0.55)');
-        grad.addColorStop(0.88, 'rgba(255,0,96,   0.58)');
-        grad.addColorStop(1,    'rgba(255,0,96,   0.04)');
-      } else {
-        grad = 'rgba(174,22,255,0.35)';
-      }
-
-      // Smooth bezier path through the displaced (rippling) points
-      ctx.beginPath();
-      ctx.moveTo(disp[0].x, disp[0].y);
-      for (let i = 1; i < n - 1; i++) {
-        const mx = (disp[i].x + disp[i + 1].x) * 0.5;
-        const my = (disp[i].y + disp[i + 1].y) * 0.5;
-        ctx.quadraticCurveTo(disp[i].x, disp[i].y, mx, my);
-      }
-      ctx.lineTo(disp[n - 1].x, disp[n - 1].y);
-
-      ctx.lineCap  = 'round';
-      ctx.lineJoin = 'round';
-
-      // Outer halo — very wide, barely-there smoky bloom
-      ctx.save();
-      ctx.filter      = 'blur(16px)';
-      ctx.strokeStyle = grad;
-      ctx.lineWidth   = 13;
-      ctx.globalAlpha = 0.10;
-      ctx.stroke();
-      ctx.restore();
-
-      // Mid glow — carries the colour
-      ctx.save();
-      ctx.filter      = 'blur(7px)';
-      ctx.strokeStyle = grad;
-      ctx.lineWidth   = 5;
-      ctx.globalAlpha = 0.18;
-      ctx.stroke();
-      ctx.restore();
-
-      // Core — soft, not rigid
-      ctx.save();
-      ctx.filter      = 'blur(3px)';
-      ctx.strokeStyle = grad;
-      ctx.lineWidth   = 2.5;
-      ctx.globalAlpha = 0.34;
-      ctx.stroke();
-      ctx.restore();
-    })();
-  }
-
-  /* ── Spherize heading effect ──────────────────────────────────
-     Splits .hero-headline and .section-heading into per-character
-     spans.  Characters within RADIUS px of the cursor scale up with
-     a smooth quadratic falloff — creating a lens / sphere-bulge.
-     Updates on both mousemove (cursor moves) and scroll (chars
-     move past a stationary cursor).
-  ───────────────────────────────────────────────────────────── */
-  function initSpherize() {
+  function initHeadingGlow() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const targets = document.querySelectorAll('.hero-headline, .section-heading');
-    if (!targets.length) return;
+    const headings = document.querySelectorAll('.hero-headline, .section-heading');
+    if (!headings.length) return;
 
-    // Split every heading into per-character inline-block spans
-    targets.forEach(heading => {
-      const text = heading.textContent;
-      heading.innerHTML = '';
-      [...text].forEach(c => {
-        if (c === '\n') {
-          heading.appendChild(document.createTextNode('\n'));
-        } else if (c === ' ') {
-          const s = document.createElement('span');
-          s.className = 'spherize-char';
-          s.style.whiteSpace = 'pre';
-          s.textContent = ' ';
-          heading.appendChild(s);
-        } else {
-          const s = document.createElement('span');
-          s.className = 'spherize-char';
-          s.textContent = c;
-          heading.appendChild(s);
-        }
+    function update(cx, cy) {
+      headings.forEach(h => {
+        const r = h.getBoundingClientRect();
+        h.style.setProperty('--glow-x', (cx - r.left) + 'px');
+        h.style.setProperty('--glow-y', (cy - r.top)  + 'px');
+        const near = cx > r.left - 120 && cx < r.right  + 120 &&
+                     cy > r.top  - 120 && cy < r.bottom + 120;
+        h.classList.toggle('heading-glow-active', near);
       });
-    });
-
-    const spans = Array.from(document.querySelectorAll('.spherize-char'));
-    if (!spans.length) return;
-
-    const RADIUS    = 180;   // px — cursor influence radius
-    const MAX_SCALE = 0.28;  // max scale-up at cursor centre (28%)
-
-    let mx = -9999, my = -9999;
-    let pending = false;
-
-    function update() {
-      spans.forEach(s => {
-        const r  = s.getBoundingClientRect();
-        const cx = r.left + r.width  * 0.5;
-        const cy = r.top  + r.height * 0.5;
-        const d  = Math.hypot(mx - cx, my - cy);
-
-        if (d >= RADIUS) {
-          if (s.style.transform) s.style.transform = '';
-          return;
-        }
-        // Quadratic falloff: full effect at cursor, zero at edge
-        const t     = 1 - d / RADIUS;
-        const scale = 1 + MAX_SCALE * t * t;
-        s.style.transform = `scale(${scale.toFixed(4)})`;
-      });
-      pending = false;
     }
 
-    function scheduleUpdate() {
-      if (!pending) { pending = true; requestAnimationFrame(update); }
-    }
-
-    window.addEventListener('mousemove', e => {
-      mx = e.clientX; my = e.clientY;
-      scheduleUpdate();
-    });
-
-    // Also update on scroll — chars move under a stationary cursor
-    window.addEventListener('scroll', scheduleUpdate, { passive: true });
-
-    document.addEventListener('mouseleave', () => {
-      mx = -9999; my = -9999;
-      scheduleUpdate();
-    });
+    window.addEventListener('mousemove', e => update(e.clientX, e.clientY));
+    document.documentElement.addEventListener('mouseleave', () =>
+      headings.forEach(h => h.classList.remove('heading-glow-active'))
+    );
   }
 
   /* ── Scroll reveal ─────────────────────────────────────────── */
@@ -827,8 +624,7 @@
     initReveal();
     initActiveNav();
     initParallax();
-    initCursor();
-    initSpherize();
+    initHeadingGlow();
   }
 
   if (document.readyState === "loading") {
