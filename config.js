@@ -58,7 +58,7 @@ const SITE = {
         year:     "03/2023",
         venue:    "",
         excerpt:  "A lone Stray navigates the ruins of a collapsed world, chasing a hum that no one else dares to hunt. What she finds in the city’s forbidden heart changes everything.",
-        href:     "story-01.html",
+        href:     "story-katze.html",
         hrefLabel: "Read →",
       },
       {
