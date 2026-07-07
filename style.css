@@ -361,7 +361,7 @@ section {
   gap: 1rem;
   align-items: start;
   background: var(--white);
-  transition: background 0.1s, color 0.1s;
+  transition: background 0.45s ease, color 0.45s ease;
   position: relative;
   overflow: hidden;
   isolation: isolate;
