@@ -797,7 +797,7 @@ a.writing-item {
   width: 26px;
   height: 26px;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 10002;
   transform: translate(-50%, -50%);
   will-change: left, top;
   transition: transform 0.18s ease, filter 0.18s ease, opacity 0.2s;
