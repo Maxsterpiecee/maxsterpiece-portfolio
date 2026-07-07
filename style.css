@@ -796,13 +796,27 @@ a.writing-item {
 #cursor-star {
   position: fixed;
   top: 0; left: 0;
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
   pointer-events: none;
   z-index: 9999;
   transform: translate(-50%, -50%);
   will-change: left, top;
-  transition: opacity 0.2s;
+  transition: transform 0.18s ease, filter 0.18s ease, opacity 0.2s;
+}
+
+#cursor-star path {
+  fill: #ff0060;
+  transition: fill 0.18s ease;
+}
+
+#cursor-star.cursor-hover {
+  transform: translate(-50%, -50%) scale(1.85);
+  filter: drop-shadow(0 0 7px rgba(255, 0, 96, 0.9));
+}
+
+#cursor-star.cursor-hover path {
+  fill: #ffffff;
 }
 
 #cursor-canvas {

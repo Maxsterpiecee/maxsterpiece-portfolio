@@ -554,20 +554,19 @@
   function initCursor() {
     if (window.matchMedia('(pointer: coarse)').matches) return; // touch — skip
 
-    // Star cursor SVG
+    // Star cursor SVG — fill via CSS so transitions work
     const ns = 'http://www.w3.org/2000/svg';
     const star = document.createElementNS(ns, 'svg');
     star.id = 'cursor-star';
     star.setAttribute('viewBox', '-1.1 -1.1 2.2 2.2');
-    star.setAttribute('width',  '18');
-    star.setAttribute('height', '18');
+    star.setAttribute('width',  '26');
+    star.setAttribute('height', '26');
     star.setAttribute('aria-hidden', 'true');
     const starPath = document.createElementNS(ns, 'path');
     starPath.setAttribute('d', 'M0,-1 C0,-0.22 -0.22,0 -1,0 C-0.22,0 0,0.22 0,1 C0,0.22 0.22,0 1,0 C0.22,0 0,-0.22 0,-1 Z');
-    starPath.setAttribute('fill', '#ff0060');
     star.appendChild(starPath);
 
-    // Canvas for directional smoke trail
+    // Canvas for smooth directional smoke trail
     const canvas = document.createElement('canvas');
     canvas.id = 'cursor-canvas';
     document.body.append(star, canvas);
@@ -580,35 +579,34 @@
     window.addEventListener('resize', resize);
 
     const ctx = canvas.getContext('2d');
-    const pts = [];    // { x, y, t }
-    const LIFE = 520;  // ms each trail point lives
+    const pts = [];
+    const LIFE = 520; // ms each point lives
+
+    function isClickable(el) {
+      return !!(el && el.closest('a, button, [role="button"]'));
+    }
 
     document.addEventListener('mousemove', e => {
-      star.style.left = e.clientX + 'px';
-      star.style.top  = e.clientY + 'px';
-      pts.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+      const x = e.clientX, y = e.clientY;
+      star.style.left = x + 'px';
+      star.style.top  = y + 'px';
+
+      // Only push a point if moved at least 3px — keeps path smooth without excess points
+      const last = pts[pts.length - 1];
+      if (!last || Math.hypot(x - last.x, y - last.y) >= 3) {
+        pts.push({ x, y, t: performance.now() });
+      }
+
+      // Hover state — elementFromPoint skips pointer-events:none elements
+      if (isClickable(document.elementFromPoint(x, y))) {
+        star.classList.add('cursor-hover');
+      } else {
+        star.classList.remove('cursor-hover');
+      }
     });
 
     document.documentElement.addEventListener('mouseleave', () => { star.style.opacity = '0'; });
     document.documentElement.addEventListener('mouseenter', () => { star.style.opacity = '1'; });
-
-    // Trail colour: pink → purple → orange  (tip=newest → tail=oldest)
-    // frac 0 = newest (cursor end), frac 1 = oldest (tail end)
-    function smokeColor(frac, alpha) {
-      let r, g, b;
-      if (frac < 0.5) {
-        const t = frac * 2;
-        r = Math.round(255 + (174 - 255) * t);
-        g = Math.round(0   + (22  - 0  ) * t);
-        b = Math.round(96  + (255 - 96 ) * t);
-      } else {
-        const t = (frac - 0.5) * 2;
-        r = Math.round(174 + (255 - 174) * t);
-        g = Math.round(22  + (106 - 22 ) * t);
-        b = Math.round(255 + (0   - 255) * t);
-      }
-      return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
-    }
 
     (function draw() {
       requestAnimationFrame(draw);
@@ -618,35 +616,51 @@
       while (pts.length && now - pts[0].t > LIFE) pts.shift();
       if (pts.length < 2) return;
 
-      ctx.save();
-      ctx.filter   = 'blur(3px)';
+      const tail = pts[0];
+      const tip  = pts[pts.length - 1];
+
+      // Gradient: orange at tail → purple → pink at tip
+      let grad;
+      if (Math.abs(tip.x - tail.x) > 0.5 || Math.abs(tip.y - tail.y) > 0.5) {
+        grad = ctx.createLinearGradient(tail.x, tail.y, tip.x, tip.y);
+        grad.addColorStop(0,    'rgba(255,106,0,  0.0)');
+        grad.addColorStop(0.12, 'rgba(255,106,0,  0.72)');
+        grad.addColorStop(0.55, 'rgba(174,22,255, 0.80)');
+        grad.addColorStop(0.88, 'rgba(255,0,96,   0.85)');
+        grad.addColorStop(1,    'rgba(255,0,96,   0.0)');
+      } else {
+        grad = 'rgba(174,22,255,0.6)';
+      }
+
+      // Build one smooth bezier path through all points (midpoint method)
+      ctx.beginPath();
+      ctx.moveTo(tail.x, tail.y);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i + 1].x) * 0.5;
+        const my = (pts[i].y + pts[i + 1].y) * 0.5;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+      }
+      ctx.lineTo(tip.x, tip.y);
+
       ctx.lineCap  = 'round';
       ctx.lineJoin = 'round';
 
-      for (let i = 1; i < pts.length; i++) {
-        const p0 = pts[i - 1]; // older
-        const p1 = pts[i];     // newer
+      // Glow pass — soft and wide
+      ctx.save();
+      ctx.filter      = 'blur(5px)';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth   = 4;
+      ctx.globalAlpha = 0.4;
+      ctx.stroke();
+      ctx.restore();
 
-        // age: 0=just born, 1=about to expire
-        const age0 = (now - p0.t) / LIFE;
-        const age1 = (now - p1.t) / LIFE;
-
-        // quadratic fade — sharp near tip, quick fade toward tail
-        const a0 = Math.pow(1 - age0, 1.8) * 0.85;
-        const a1 = Math.pow(1 - age1, 1.8) * 0.85;
-
-        const grad = ctx.createLinearGradient(p0.x, p0.y, p1.x, p1.y);
-        grad.addColorStop(0, smokeColor(age0, a0));
-        grad.addColorStop(1, smokeColor(age1, a1));
-
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.strokeStyle = grad;
-        ctx.lineWidth   = Math.max(0.5, (1 - age0) * 5.5);
-        ctx.stroke();
-      }
-
+      // Core pass — thin and slightly crisp
+      ctx.save();
+      ctx.filter      = 'blur(1px)';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth   = 1.5;
+      ctx.globalAlpha = 0.88;
+      ctx.stroke();
       ctx.restore();
     })();
   }
