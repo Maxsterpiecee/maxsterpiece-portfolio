@@ -34,6 +34,7 @@
   var ctx  = canvas.getContext('2d');
   var pts  = [];
   var LIFE = 520; // ms each trail point lives
+  var curX = -1, curY = -1; // current cursor position for ambient glow
 
   function isClickable(el) {
     return !!(el && el.closest('a, button, [role="button"]'));
@@ -41,6 +42,7 @@
 
   document.addEventListener('mousemove', function (e) {
     var x = e.clientX, y = e.clientY;
+    curX = x; curY = y;
     star.style.left = x + 'px';
     star.style.top  = y + 'px';
 
@@ -56,13 +58,25 @@
     }
   });
 
-  document.documentElement.addEventListener('mouseleave', function () { star.style.opacity = '0'; });
+  document.documentElement.addEventListener('mouseleave', function () { star.style.opacity = '0'; curX = -1; curY = -1; });
   document.documentElement.addEventListener('mouseenter', function () { star.style.opacity = '1'; });
 
   /* ── Draw loop ────────────────────────────────────────────── */
   (function draw() {
     requestAnimationFrame(draw);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Ambient light — large soft glow that follows the cursor
+    if (curX >= 0) {
+      var glow = ctx.createRadialGradient(curX, curY, 0, curX, curY, 320);
+      glow.addColorStop(0,   'rgba(255, 255, 255, 0.07)');
+      glow.addColorStop(0.5, 'rgba(255, 255, 255, 0.025)');
+      glow.addColorStop(1,   'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(curX, curY, 320, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     var now = performance.now();
     while (pts.length && now - pts[0].t > LIFE) pts.shift();
