@@ -943,54 +943,50 @@ a.writing-item {
   .hero-sub { white-space: normal; }
 }
 
-/* ── Heading cursor glow ────────────────────────────────────── */
-/* Radial gradient that tracks the cursor over large headings.
-   JS (initHeadingGlow) sets --glow-x/y and toggles .heading-glow-active. */
+/* ── Heading cursor glow — background-clip restricts glow to letter pixels ── */
 .hero-headline,
 .section-heading {
   position: relative;
-  isolation: isolate; /* contain blend modes to within the heading */
 }
 
-/* White headings (hero on dark bg): multiply tints only the white letters */
-.hero-headline::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
+/* Hero (white text on dark bg): gradient visible only through letter shapes */
+.hero-headline {
+  background-image: radial-gradient(
     ellipse 280px 170px at var(--glow-x, -600px) var(--glow-y, -600px),
-    rgba(255, 0, 96, 1.0),
-    rgba(174, 22, 255, 0.88) 42%,
+    #ff0060,
+    rgba(174, 22, 255, 0.90) 42%,
     transparent 68%
   );
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  z-index: 1;
+  background-color: var(--white);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.hero-headline.heading-glow-active::before { opacity: 1; }
-
-/* Dark headings on light bg: screen whitens only the dark letters */
-.section-heading::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
+/* Section headings (dark text on light bg): white gradient whitens letters near cursor */
+.section-heading {
+  background-image: radial-gradient(
     ellipse 280px 170px at var(--glow-x, -600px) var(--glow-y, -600px),
     rgba(255, 255, 255, 1.0),
-    rgba(235, 210, 255, 0.72) 42%,
+    rgba(235, 210, 255, 0.75) 42%,
     transparent 68%
   );
-  mix-blend-mode: screen;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  z-index: 1;
+  background-color: var(--black);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.section-heading.heading-glow-active::before { opacity: 1; }
+/* Contact section heading is white text on dark bg — same treatment as hero */
+#contact .section-heading {
+  background-image: radial-gradient(
+    ellipse 280px 170px at var(--glow-x, -600px) var(--glow-y, -600px),
+    #ff0060,
+    rgba(174, 22, 255, 0.90) 42%,
+    transparent 68%
+  );
+  background-color: var(--white);
+}
 
 /* ── Scroll animation ───────────────────────────────────────── */
 .reveal {
