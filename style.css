@@ -805,22 +805,11 @@ a.writing-item {
   transition: opacity 0.2s;
 }
 
-#cursor-trail {
+#cursor-canvas {
   position: fixed;
   top: 0; left: 0;
-  width: 64px;
-  height: 64px;
-  background: radial-gradient(ellipse at center,
-    rgba(255, 0, 96, 0.55) 0%,
-    rgba(174, 22, 255, 0.28) 45%,
-    transparent 70%
-  );
-  filter: blur(9px);
   pointer-events: none;
-  z-index: 9998;
-  transform: translate(-50%, -50%);
-  will-change: left, top;
-  transition: opacity 0.3s;
+  z-index: 9997;
 }
 
 /* ── Decorative Stars ───────────────────────────────────────── */

@@ -554,51 +554,100 @@
   function initCursor() {
     if (window.matchMedia('(pointer: coarse)').matches) return; // touch — skip
 
-    // Star cursor — SVG matching the site's 4-pointed star motif
-    const ns  = "http://www.w3.org/2000/svg";
-    const star = document.createElementNS(ns, "svg");
-    star.id = "cursor-star";
-    star.setAttribute("viewBox", "-1.1 -1.1 2.2 2.2");
-    star.setAttribute("width",  "18");
-    star.setAttribute("height", "18");
-    star.setAttribute("aria-hidden", "true");
-    const starPath = document.createElementNS(ns, "path");
-    starPath.setAttribute("d", "M0,-1 C0,-0.22 -0.22,0 -1,0 C-0.22,0 0,0.22 0,1 C0,0.22 0.22,0 1,0 C0.22,0 0,-0.22 0,-1 Z");
-    starPath.setAttribute("fill", "#ff0060");
+    // Star cursor SVG
+    const ns = 'http://www.w3.org/2000/svg';
+    const star = document.createElementNS(ns, 'svg');
+    star.id = 'cursor-star';
+    star.setAttribute('viewBox', '-1.1 -1.1 2.2 2.2');
+    star.setAttribute('width',  '18');
+    star.setAttribute('height', '18');
+    star.setAttribute('aria-hidden', 'true');
+    const starPath = document.createElementNS(ns, 'path');
+    starPath.setAttribute('d', 'M0,-1 C0,-0.22 -0.22,0 -1,0 C-0.22,0 0,0.22 0,1 C0,0.22 0.22,0 1,0 C0.22,0 0,-0.22 0,-1 Z');
+    starPath.setAttribute('fill', '#ff0060');
     star.appendChild(starPath);
 
-    const trail = el("div", { id: "cursor-trail" });
-    document.body.append(star, trail);
+    // Canvas for directional smoke trail
+    const canvas = document.createElement('canvas');
+    canvas.id = 'cursor-canvas';
+    document.body.append(star, canvas);
 
-    let dx = window.innerWidth  / 2;
-    let dy = window.innerHeight / 2;
-    let rx = dx, ry = dy;
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
 
-    // Star follows exactly; trail lerps behind
+    const ctx = canvas.getContext('2d');
+    const pts = [];    // { x, y, t }
+    const LIFE = 520;  // ms each trail point lives
+
     document.addEventListener('mousemove', e => {
-      dx = e.clientX;
-      dy = e.clientY;
-      star.style.left = dx + 'px';
-      star.style.top  = dy + 'px';
+      star.style.left = e.clientX + 'px';
+      star.style.top  = e.clientY + 'px';
+      pts.push({ x: e.clientX, y: e.clientY, t: performance.now() });
     });
 
-    // Fade both out when cursor leaves the window
-    document.documentElement.addEventListener('mouseleave', () => {
-      star.style.opacity  = '0';
-      trail.style.opacity = '0';
-    });
-    document.documentElement.addEventListener('mouseenter', () => {
-      star.style.opacity  = '1';
-      trail.style.opacity = '1';
-    });
+    document.documentElement.addEventListener('mouseleave', () => { star.style.opacity = '0'; });
+    document.documentElement.addEventListener('mouseenter', () => { star.style.opacity = '1'; });
 
-    // Trail lags with smooth lerp
-    (function loop() {
-      requestAnimationFrame(loop);
-      rx += (dx - rx) * 0.08;
-      ry += (dy - ry) * 0.08;
-      trail.style.left = rx.toFixed(1) + 'px';
-      trail.style.top  = ry.toFixed(1) + 'px';
+    // Trail colour: pink → purple → orange  (tip=newest → tail=oldest)
+    // frac 0 = newest (cursor end), frac 1 = oldest (tail end)
+    function smokeColor(frac, alpha) {
+      let r, g, b;
+      if (frac < 0.5) {
+        const t = frac * 2;
+        r = Math.round(255 + (174 - 255) * t);
+        g = Math.round(0   + (22  - 0  ) * t);
+        b = Math.round(96  + (255 - 96 ) * t);
+      } else {
+        const t = (frac - 0.5) * 2;
+        r = Math.round(174 + (255 - 174) * t);
+        g = Math.round(22  + (106 - 22 ) * t);
+        b = Math.round(255 + (0   - 255) * t);
+      }
+      return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+    }
+
+    (function draw() {
+      requestAnimationFrame(draw);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const now = performance.now();
+      while (pts.length && now - pts[0].t > LIFE) pts.shift();
+      if (pts.length < 2) return;
+
+      ctx.save();
+      ctx.filter   = 'blur(3px)';
+      ctx.lineCap  = 'round';
+      ctx.lineJoin = 'round';
+
+      for (let i = 1; i < pts.length; i++) {
+        const p0 = pts[i - 1]; // older
+        const p1 = pts[i];     // newer
+
+        // age: 0=just born, 1=about to expire
+        const age0 = (now - p0.t) / LIFE;
+        const age1 = (now - p1.t) / LIFE;
+
+        // quadratic fade — sharp near tip, quick fade toward tail
+        const a0 = Math.pow(1 - age0, 1.8) * 0.85;
+        const a1 = Math.pow(1 - age1, 1.8) * 0.85;
+
+        const grad = ctx.createLinearGradient(p0.x, p0.y, p1.x, p1.y);
+        grad.addColorStop(0, smokeColor(age0, a0));
+        grad.addColorStop(1, smokeColor(age1, a1));
+
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth   = Math.max(0.5, (1 - age0) * 5.5);
+        ctx.stroke();
+      }
+
+      ctx.restore();
     })();
   }
 
