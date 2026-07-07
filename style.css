@@ -400,18 +400,6 @@ section {
 
 .writing-item:last-child { border-bottom: none; }
 
-.writing-item:hover {
-  background: var(--black);
-  color: var(--white);
-}
-
-.writing-item:hover .writing-meta,
-.writing-item:hover .writing-venue,
-.writing-item:hover a {
-  color: var(--chrome);
-}
-
-.writing-item:hover a:hover { color: var(--white); }
 
 .writing-title {
   font-family: var(--font-display);
