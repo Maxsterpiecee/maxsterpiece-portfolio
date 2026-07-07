@@ -620,16 +620,17 @@
       const tip  = pts[pts.length - 1];
 
       // Gradient: orange at tail → purple → pink at tip
+      // Soft edges (not 0) keep the trail wispy rather than hard-edged
       let grad;
       if (Math.abs(tip.x - tail.x) > 0.5 || Math.abs(tip.y - tail.y) > 0.5) {
         grad = ctx.createLinearGradient(tail.x, tail.y, tip.x, tip.y);
-        grad.addColorStop(0,    'rgba(255,106,0,  0.0)');
-        grad.addColorStop(0.12, 'rgba(255,106,0,  0.72)');
-        grad.addColorStop(0.55, 'rgba(174,22,255, 0.80)');
-        grad.addColorStop(0.88, 'rgba(255,0,96,   0.85)');
-        grad.addColorStop(1,    'rgba(255,0,96,   0.0)');
+        grad.addColorStop(0,    'rgba(255,106,0,  0.09)');
+        grad.addColorStop(0.12, 'rgba(255,106,0,  0.62)');
+        grad.addColorStop(0.55, 'rgba(174,22,255, 0.70)');
+        grad.addColorStop(0.88, 'rgba(255,0,96,   0.74)');
+        grad.addColorStop(1,    'rgba(255,0,96,   0.07)');
       } else {
-        grad = 'rgba(174,22,255,0.6)';
+        grad = 'rgba(174,22,255,0.5)';
       }
 
       // Build one smooth bezier path through all points (midpoint method)
@@ -645,21 +646,30 @@
       ctx.lineCap  = 'round';
       ctx.lineJoin = 'round';
 
-      // Glow pass — soft and wide
+      // Outer wisp — very wide and barely there, gives the smoky halo
       ctx.save();
-      ctx.filter      = 'blur(5px)';
+      ctx.filter      = 'blur(12px)';
       ctx.strokeStyle = grad;
-      ctx.lineWidth   = 4;
-      ctx.globalAlpha = 0.4;
+      ctx.lineWidth   = 11;
+      ctx.globalAlpha = 0.18;
       ctx.stroke();
       ctx.restore();
 
-      // Core pass — thin and slightly crisp
+      // Mid glow — medium spread, most of the visible colour
       ctx.save();
-      ctx.filter      = 'blur(1px)';
+      ctx.filter      = 'blur(5px)';
       ctx.strokeStyle = grad;
-      ctx.lineWidth   = 1.5;
-      ctx.globalAlpha = 0.88;
+      ctx.lineWidth   = 5;
+      ctx.globalAlpha = 0.30;
+      ctx.stroke();
+      ctx.restore();
+
+      // Core — soft, not razor-sharp
+      ctx.save();
+      ctx.filter      = 'blur(2px)';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth   = 2.5;
+      ctx.globalAlpha = 0.52;
       ctx.stroke();
       ctx.restore();
     })();
